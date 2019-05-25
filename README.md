@@ -5,6 +5,7 @@ include
 - pandoc
 - wkhtmltopdf
 - plantuml
+- graphviz
 - japanese font (Noto font)
 
 ## setup pandoc container
@@ -29,6 +30,7 @@ make pdf
 
 ```bash:
 docker run -v `pwd`:/source mitakeck/pandoc-plantuml pandoc ...
+docker run -v `pwd`:/source mitakeck/pandoc-plantuml pandoc -h
 ```
 
 ## clean up dist folder
