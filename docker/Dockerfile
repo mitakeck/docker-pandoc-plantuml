@@ -36,7 +36,10 @@ RUN wget https://api.github.com/repos/wkhtmltopdf/wkhtmltopdf/releases/latest -O
 RUN wget "https://downloads.sourceforge.net/project/plantuml/plantuml.jar?r=http%3A%2F%2Fplantuml.com%2Fstarting&ts=1538667739&use_mirror=jaist" -O plantuml.jar \
   && cp plantuml.jar /usr/local/bin
 
-COPY plantuml /usr/bin/plantuml
+RUN echo -e "#\!/bin/bash\n\
+export LANG=ja_JP.UTF-8\n\
+/usr/bin/java -Djava.io.tmpdir=/var/tmp -Djava.awt.headless=true -jar /usr/local/bin/plantuml.jar  -charset UTF-8 \${@}\n\
+" >> /usr/bin/plantuml
 
 RUN wget https://bootstrap.pypa.io/get-pip.py -O -| python3 \
   && pip install pandoc-plantuml-filter
