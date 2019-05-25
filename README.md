@@ -1,6 +1,13 @@
 # docker-pandoc-plantuml
 
-## build pandoc cotainer
+include
+
+- pandoc
+- wkhtmltopdf
+- plantuml
+- japanese font (Noto font)
+
+## setup pandoc container
 
 ```bash:
 make build
@@ -18,7 +25,13 @@ make doc
 make pdf
 ```
 
-## reset
+## you can call pandoc command directry
+
+```bash:
+docker run -v `pwd`:/source mitakeck/pandoc-plantuml pandoc ...
+```
+
+## clean up dist folder
 
 ```bash:
 make clean
