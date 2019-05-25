@@ -26,7 +26,7 @@ make doc
 make pdf
 ```
 
-## you can call pandoc command directry
+## you can call `pandoc` command direct
 
 ```bash:
 docker run -v `pwd`:/source mitakeck/pandoc-plantuml pandoc ...
