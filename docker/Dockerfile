@@ -1,10 +1,33 @@
+FROM alpine as dl-pandoc
+WORKDIR /work
+RUN apk update && apk add jq wget unzip
+RUN wget https://api.github.com/repos/jgm/pandoc/releases/latest -O - | jq -r '.assets[] | select(.name | index("amd64.deb")) | .browser_download_url' | wget -i - --quiet -O pandoc.deb
+
+FROM alpine as dl-wkhtmltopdf
+WORKDIR /work
+RUN apk update && apk add jq wget unzip
+RUN wget https://api.github.com/repos/wkhtmltopdf/wkhtmltopdf/releases/latest -O - | jq -r '.assets[] | select(.name | index("stretch_amd64.deb")) | .browser_download_url' | wget -i - --quiet -O wkhtmltopdf.deb
+
+FROM alpine as dl-plantuml
+WORKDIR /work
+RUN apk update && apk add jq wget unzip
+RUN wget "https://downloads.sourceforge.net/project/plantuml/plantuml.jar?r=http%3A%2F%2Fplantuml.com%2Fstarting&ts=1538667739&use_mirror=jaist" -O plantuml.jar 
+
+FROM alpine as dl-notofont
+WORKDIR /work
+RUN apk update && apk add jq wget unzip
+RUN wget https://noto-website.storage.googleapis.com/pkgs/Noto-unhinted.zip \
+  && unzip -d NotoSansJapanese Noto-unhinted.zip \
+  && rm Noto-unhinted.zip
+
+FROM alpine as dl-pip
+WORKDIR /work
+RUN apk update && apk add jq wget 
+RUN wget https://bootstrap.pypa.io/get-pip.py
+
 FROM debian:stable-slim
-
-LABEL mitakeck <mitake.ck@gmail.com>
-
 RUN mkdir -p /usr/share/man/man1
 RUN apt-get update && apt-get install -y \
-  jq \
   gcc \
   python3 \
   graphviz \
@@ -16,41 +39,37 @@ RUN apt-get update && apt-get install -y \
   libxtst6 \
   libjpeg62-turbo \
   make \
-  unzip \
   openssh-client \
   rsync \
-  wget \
   xz-utils \
   xfonts-75dpi \
   xfonts-base \
   && rm -rf /var/lib/apt/lists/*
 
-RUN wget https://api.github.com/repos/jgm/pandoc/releases/latest -O - | jq -r '.assets[] | select(.name | index("amd64.deb")) | .browser_download_url' | wget -i - --quiet -O pandoc.deb \
-  && dpkg -i pandoc.deb\
-  && rm pandoc.deb
+COPY --from=dl-pandoc /work /root
+RUN dpkg -i /root/pandoc.deb\
+  && rm /root/pandoc.deb
 
-RUN wget https://api.github.com/repos/wkhtmltopdf/wkhtmltopdf/releases/latest -O - | jq -r '.assets[] | select(.name | index("stretch_amd64.deb")) | .browser_download_url' | wget -i - --quiet -O wkhtmltopdf.deb \
-  && dpkg -i wkhtmltopdf.deb \
-  && rm -rf wkhtmltopdf.deb
+COPY --from=dl-wkhtmltopdf /work /root
+RUN dpkg -i /root/wkhtmltopdf.deb \
+  && rm -rf /root/wkhtmltopdf.deb
 
-RUN wget "https://downloads.sourceforge.net/project/plantuml/plantuml.jar?r=http%3A%2F%2Fplantuml.com%2Fstarting&ts=1538667739&use_mirror=jaist" -O plantuml.jar \
-  && cp plantuml.jar /usr/local/bin
+COPY --from=dl-plantuml /work /root
+RUN cp /root/plantuml.jar /usr/local/bin
 
 RUN echo "#!/bin/bash\n\
-export LANG=ja_JP.UTF-8;\n\
-/usr/bin/java -Djava.io.tmpdir=/var/tmp -Djava.awt.headless=true -jar /usr/local/bin/plantuml.jar  -charset UTF-8 \${@}\n\
-" >> /usr/bin/plantuml \
+  export LANG=ja_JP.UTF-8;\n\
+  /usr/bin/java -Djava.io.tmpdir=/var/tmp -Djava.awt.headless=true -jar /usr/local/bin/plantuml.jar  -charset UTF-8 \${@}\n\
+  " >> /usr/bin/plantuml \
   && chmod +x /usr/bin/plantuml
 
-RUN wget https://bootstrap.pypa.io/get-pip.py -O -| python3 \
-  && pip install pandoc-plantuml-filter
+COPY --from=dl-pip /work /root
+RUN python3 /root/get-pip.py \
+  && pip install pandoc-plantuml-filter \
+  && rm /root/get-pip.py
 
-RUN wget https://noto-website.storage.googleapis.com/pkgs/Noto-unhinted.zip \
-  && unzip -d NotoSansJapanese Noto-unhinted.zip \
-  && mkdir -p /usr/share/fonts/opentype \
-  && mv -fv ./NotoSansJapanese /usr/share/fonts/opentype/NotoSansJapanese \
-  && rm -rfv Noto-unhinted.zip \
-  && fc-cache -fv
+COPY --from=dl-notofont /work/NotoSansJapanese /usr/share/fonts/opentype/NotoSansJapanese
+RUN fc-cache -fv
 
 WORKDIR /source
 ENTRYPOINT [""]
