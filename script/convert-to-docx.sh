@@ -20,7 +20,7 @@ for mdfile in *.md; do
     # sed -e "s/$nextpagec/$nextpagee/g" $mdfile
     perl -pe "s|$nextpagec|$nextpagee|g" $mdfile > tmp/$tmpfile
 
-    pandoc --reference-doc=template/template.docx tmp/$tmpfile -o dist/$docfile --filter pandoc-plantuml
+    pandoc --reference-doc=template/template.docx tmp/$tmpfile -o dist/$docfile --filter /root/pandoc-plantuml.py
 done
 
 rm -rf tmp
